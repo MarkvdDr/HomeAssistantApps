@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Secrets and local settings
+token.txt
+userSettings.json
+.env
+.env.*
+
+# Build output and archives
+*.zip
+*.sha256
+
+# OS noise
+.DS_Store

@@ -1,0 +1,37 @@
+configuration:
+  bridge_implementation:
+    name: Bridge-implementatie
+    description: Kies "official" voor Proton Mail Bridge (betaald plan nodig) of "hydroxide" voor de experimentele derde-partijbridge, die met een gratis Proton-account kan werken.
+  log_level:
+    name: Logniveau
+    description: Uitgebreidheid van het Proton Mail Bridge-log. "trace" wordt vertaald naar "debug".
+  timezone:
+    name: Tijdzone
+    description: Tijdzone die Bridge gebruikt, bijvoorbeeld Europe/Amsterdam.
+  telemetry_disabled:
+    name: Telemetrie uitschakelen
+    description: Schakel de anonieme gebruiksstatistieken van Bridge uit.
+  proxy_allowed:
+    name: Alternatieve routing toestaan
+    description: Laat Bridge de alternatieve routing van Proton gebruiken wanneer de normale verbinding geblokkeerd is.
+  show_all_mail:
+    name: All Mail-map tonen
+    description: Toon de All Mail-map in verbonden mailclients.
+  bridge_autoupdate:
+    name: Bridge automatisch updaten
+    description: Sta de ingebouwde updater van Bridge toe. Het add-on-image is onveranderlijk, dus updaten via de add-on heeft de voorkeur.
+  imap_security:
+    name: IMAP-beveiliging
+    description: STARTTLS of SSL voor de IMAP-server. Gebruik dezelfde waarde in je mailclient.
+  smtp_security:
+    name: SMTP-beveiliging
+    description: STARTTLS of SSL voor de SMTP-server. Gebruik dezelfde waarde in je mailclient.
+  log_imap:
+    name: IMAP-protocollogging
+    description: Log IMAP-verkeer (off, all, client of server). Het log kan ontsleutelde e-mailgegevens bevatten.
+  log_smtp:
+    name: SMTP-protocollogging
+    description: Log SMTP-verkeer. Het log kan ontsleutelde e-mailgegevens bevatten.
+  auto_restart:
+    name: Automatisch herstarten
+    description: Herstart Bridge automatisch wanneer het proces stopt.

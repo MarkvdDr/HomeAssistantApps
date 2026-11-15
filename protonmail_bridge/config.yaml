@@ -1,0 +1,56 @@
+name: Proton Mail Bridge
+version: "1.2.2"
+slug: protonmail_bridge
+description: Run Proton Mail Bridge or the third-party Hydroxide bridge on Home Assistant OS, with configurable IMAP/SMTP access and a web terminal for login and account management.
+url: https://github.com/MarkvdDr/HomeAssistantApps
+arch:
+  - aarch64
+  - amd64
+startup: application
+boot: auto
+init: true
+backup: cold
+timeout: 30
+ingress: true
+ingress_port: 8099
+ingress_entry: /
+panel_icon: mdi:email-lock
+panel_title: Proton Bridge
+panel_admin: true
+watchdog: http://[HOST]:[PORT:8099]/health
+ports:
+  1143/tcp: 1143
+  1025/tcp: 1025
+ports_description:
+  1143/tcp: "IMAP server (official: STARTTLS/SSL; Hydroxide: SSL)"
+  1025/tcp: "SMTP server (official: STARTTLS/SSL; Hydroxide: SSL)"
+options:
+  bridge_implementation: official
+  log_level: info
+  timezone: Europe/Amsterdam
+  telemetry_disabled: true
+  proxy_allowed: false
+  show_all_mail: true
+  bridge_autoupdate: false
+  imap_security: starttls
+  smtp_security: starttls
+  log_imap: "off"
+  log_smtp: false
+  auto_restart: true
+schema:
+  bridge_implementation: list(official|hydroxide)
+  log_level: list(trace|debug|info|warn|error)
+  timezone: str?
+  telemetry_disabled: bool
+  proxy_allowed: bool
+  show_all_mail: bool
+  bridge_autoupdate: bool
+  imap_security: list(starttls|ssl)
+  smtp_security: list(starttls|ssl)
+  log_imap: list(off|all|client|server)
+  log_smtp: bool
+  auto_restart: bool
+# Optional: pull a prebuilt image from GitHub Container Registry instead of
+# building the add-on on your Home Assistant host. Uncomment the line below
+# after the "Build add-on images" workflow has finished.
+# image: ghcr.io/markvddr/ha-protonmail-bridge-{arch}

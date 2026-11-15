@@ -1,0 +1,26 @@
+Home Assistant app voor Toon - nieuwe versie
+============================================
+
+1. Maak een back-up van /HCBv2/qml/apps/homeassistant
+2. Kopieer ALLE bestanden uit deze map naar /HCBv2/qml/apps/homeassistant
+   (token.txt blijft staan zoals het is;
+    userSettings.json wordt hergebruikt: Server/Port/SSL/Clock/DateInDim)
+   De app gebruikt de officiële TSC-iconen; een drawables-map is niet nodig.
+   Zet token.txt in dezelfde map als HomeassistantApp.qml.
+3. Herstart de GUI (of de Toon) zodat de QML opnieuw geladen wordt
+4. Instellingen > controleer server, poort en token > Opslaan
+
+NIEUW
+- Houd een groep in de kaart Verlichting op het overzicht 1 seconde
+  ingedrukt om een losse lamp van die groep te kiezen en te schakelen.
+- Tik in de tab Verlichting op 'Verlichting sorteren' om welke verlichtingen
+  bij een groep horen.
+- Instelling 'Datum bij scherm dimmen' (standaard uit).
+- Uit: de datum verdwijnt in dimstand; de klok blijft zichtbaar.
+- Aan: de datum blijft onder de klok zichtbaar in dimstand.
+
+Aanpassen van entiteiten: config.json bewerken, daarna in de
+instellingen op 'Herlaad config.json' tikken (geen herstart nodig).
+
+Niet meer gebruikt (mogen blijven staan of weg): scenes.json, sensors.json,
+sliders.json, switches.json, alarm.json

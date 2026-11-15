@@ -1,0 +1,128 @@
+# syntax=docker/dockerfile:1
+#
+# Source-build variant of the Proton Mail Bridge add-on image.
+#
+# This is only needed to regenerate prebuilt/aarch64/bridge when upgrading the
+# bundled Bridge version. The normal Dockerfile uses that prebuilt binary and
+# does not compile Go code.
+#
+# aarch64: builds Bridge from the official GPLv3 source at the pinned release
+#          tag. This is the slow path (15-45 minutes on a Raspberry Pi 4).
+# amd64:   uses the official Proton .deb release (fast build, signed upstream).
+#
+FROM debian:trixie-slim AS build
+
+ARG BRIDGE_VERSION=3.27.1
+# Matches the toolchain pinned in the upstream go.mod for this release.
+ARG GO_VERSION=1.26.7
+ARG TARGETARCH
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# libsecret-1-dev and libglib2.0-dev are required by the Linux keychain helper.
+# libglib2.0-0t64, libsecret-1-0 and the other runtime libraries are needed to
+# run `--version` at the end of the build.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        dpkg \
+        git \
+        libcbor-dev \
+        libfido2-dev \
+        libglib2.0-0t64 \
+        libglib2.0-dev \
+        libsecret-1-0 \
+        libsecret-1-dev \
+        libssl-dev \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# amd64: extract the official release binary from the upstream .deb.
+# aarch64: build the same tag from source.
+RUN set -eux; \
+    arch="${TARGETARCH:-$(dpkg --print-architecture)}"; \
+    if [ "$arch" = "amd64" ]; then \
+        curl -fsSL --retry 5 --retry-delay 5 \
+            -o /tmp/bridge.deb \
+            "https://proton.me/download/bridge/protonmail-bridge_${BRIDGE_VERSION}-1_amd64.deb"; \
+        dpkg-deb --fsys-tarfile /tmp/bridge.deb \
+            | tar -xO ./usr/lib/protonmail/bridge/bridge > /bridge; \
+        rm -f /tmp/bridge.deb; \
+    else \
+        curl -fsSL --retry 5 --retry-delay 5 \
+            -o /tmp/go.tgz \
+            "https://go.dev/dl/go${GO_VERSION}.linux-arm64.tar.gz"; \
+        tar -C /usr/local -xzf /tmp/go.tgz; \
+        rm -f /tmp/go.tgz; \
+        export PATH="/usr/local/go/bin:$PATH"; \
+        export GOTOOLCHAIN=local; \
+        export GOFLAGS="-p=2"; \
+        git clone --depth 1 --branch "v${BRIDGE_VERSION}" \
+            https://github.com/ProtonMail/proton-bridge.git /src; \
+        cd /src; \
+        go version; \
+        make build-nogui "BRIDGE_APP_VERSION=${BRIDGE_VERSION}"; \
+        cp /src/bridge /bridge; \
+    fi; \
+    chmod 0755 /bridge; \
+    /bridge --version
+
+FROM debian:trixie-slim
+
+ARG TARGETARCH
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    HOME=/data/home \
+    XDG_CONFIG_HOME=/data/home/.config \
+    XDG_DATA_HOME=/data/home/.local/share \
+    XDG_CACHE_HOME=/data/home/.cache \
+    XDG_RUNTIME_DIR=/run/proton-bridge \
+    BRIDGE_BIN=/usr/lib/protonmail/bridge/bridge \
+    PYTHONUNBUFFERED=1 \
+    LANG=C.UTF-8
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        dbus \
+        gnome-keyring \
+        iproute2 \
+        libcbor0.10 \
+        libfido2-1 \
+        libglib2.0-0t64 \
+        libsecret-1-0 \
+        libssl3t64 \
+        openssl \
+        python3 \
+        socat \
+        tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /bridge /usr/lib/protonmail/bridge/bridge
+RUN chmod 0755 /usr/lib/protonmail/bridge/bridge \
+    && ln -sf /usr/lib/protonmail/bridge/bridge /usr/bin/proton-bridge
+
+# Hydroxide is only used when bridge_implementation is set to hydroxide. The
+# binaries are built from the pinned v0.2.33 release; see prebuilt/README.md.
+COPY prebuilt/hydroxide/ /prebuilt/hydroxide/
+RUN set -eux; \
+    arch="${TARGETARCH:-$(dpkg --print-architecture)}"; \
+    case "$arch" in \
+        amd64) hydroxide_arch=amd64 ;; \
+        aarch64|arm64) hydroxide_arch=aarch64 ;; \
+        *) echo "No prebuilt Hydroxide binary for architecture: ${arch}" >&2; exit 1 ;; \
+    esac; \
+    (cd "/prebuilt/hydroxide/${hydroxide_arch}" && sha256sum -c hydroxide.sha256.txt); \
+    install -m 0755 "/prebuilt/hydroxide/${hydroxide_arch}/hydroxide" /usr/local/bin/hydroxide; \
+    rm -rf /prebuilt/hydroxide; \
+    XDG_CONFIG_HOME=/tmp/hydroxide-check /usr/local/bin/hydroxide status >/dev/null
+
+COPY app/ /app/
+COPY run.sh /run.sh
+RUN chmod 0755 /run.sh /app/start.sh
+
+EXPOSE 8099 1143 1025
+
+CMD ["/run.sh"]

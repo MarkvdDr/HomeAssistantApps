@@ -1,0 +1,37 @@
+configuration:
+  bridge_implementation:
+    name: Bridge implementation
+    description: Choose "official" for Proton Mail Bridge (paid plan required) or "hydroxide" for the experimental third-party bridge, which can work with a free Proton account.
+  log_level:
+    name: Log level
+    description: Verbosity of the Proton Mail Bridge log. "trace" is mapped to "debug".
+  timezone:
+    name: Time zone
+    description: Time zone used by Bridge, for example Europe/Amsterdam.
+  telemetry_disabled:
+    name: Disable telemetry
+    description: Disable Bridge's anonymous usage diagnostics.
+  proxy_allowed:
+    name: Allow alternative routing
+    description: Let Bridge use Proton's alternative routing when the normal connection is blocked.
+  show_all_mail:
+    name: Show All Mail folder
+    description: Show the All Mail folder in connected mail clients.
+  bridge_autoupdate:
+    name: Bridge self-updates
+    description: Allow Bridge's built-in updater. The add-on image is immutable, so add-on updates are recommended instead.
+  imap_security:
+    name: IMAP security
+    description: STARTTLS or SSL for the IMAP server. Use the same value in your mail client.
+  smtp_security:
+    name: SMTP security
+    description: STARTTLS or SSL for the SMTP server. Use the same value in your mail client.
+  log_imap:
+    name: IMAP protocol logging
+    description: Log IMAP traffic (off, all, client or server). The log may contain decrypted mail data.
+  log_smtp:
+    name: SMTP protocol logging
+    description: Log SMTP traffic. The log may contain decrypted mail data.
+  auto_restart:
+    name: Automatic restart
+    description: Restart Bridge automatically if the process exits.

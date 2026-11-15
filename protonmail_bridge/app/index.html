@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Proton Mail Bridge</title>
+<style>
+  :root {
+    --bg: #0e0b1d;
+    --panel: #171331;
+    --panel-2: #1f1943;
+    --text: #e9e6ff;
+    --muted: #9c95c9;
+    --accent: #8a6cff;
+    --accent-2: #6d4aff;
+    --ok: #38d39f;
+    --bad: #ff6b81;
+    --warn: #ffc857;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 600px at 15% -10%, #2a1f63 0%, transparent 60%), var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #2c2550;
+    background: rgba(14, 11, 29, .7);
+    backdrop-filter: blur(8px);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .mark {
+    width: 38px; height: 38px; flex: 0 0 38px;
+    display: grid; place-items: center;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 6px 20px rgba(109, 74, 255, .35);
+    font-size: 20px;
+  }
+  h1 { font-size: 16px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+  .sub { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+  .actions { display: flex; align-items: center; gap: 8px; }
+  .pill {
+    font-size: 12px; font-weight: 600;
+    padding: 5px 10px; border-radius: 999px;
+    border: 1px solid #37305f; color: var(--muted);
+    white-space: nowrap;
+  }
+  .pill.ok { color: #071a12; background: var(--ok); border-color: transparent; }
+  .pill.bad { color: #2a0710; background: var(--bad); border-color: transparent; }
+  .pill.warn { color: #2a1e00; background: var(--warn); border-color: transparent; }
+  button {
+    font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid #3a3268;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: .5; cursor: default; }
+  button:disabled:hover { border-color: #3a3268; }
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px 18px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 0;
+  }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; }
+  .quick button { background: transparent; border-color: #332b5c; color: var(--muted); padding: 6px 10px; font-size: 12px; }
+  .quick button:hover { color: var(--text); border-color: var(--accent); }
+  [hidden] { display: none !important; }
+  .notice {
+    padding: 10px 12px;
+    border: 1px solid #5c4a1c;
+    border-left: 4px solid var(--warn);
+    border-radius: 10px;
+    background: rgba(255, 200, 87, .08);
+    color: #f3e2b6;
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+  .notice strong { color: var(--warn); }
+  .notice.experimental {
+    border-color: #2f5c48;
+    border-left-color: var(--ok);
+    background: rgba(56, 211, 159, .08);
+    color: #c9f3e2;
+  }
+  .notice.experimental strong { color: var(--ok); }
+  #auth-form {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  #auth-user {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    background: #15102c;
+    border: 1px solid #332b5c;
+    border-radius: 10px;
+    padding: 9px 12px;
+    outline: none;
+  }
+  #auth-user:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109, 74, 255, .18); }
+  .terminal-wrap {
+    flex: 1;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    background: #0a0817;
+    border: 1px solid #2c2550;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+  }
+  #term {
+    flex: 1;
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #d9d4ff;
+    white-space: pre-wrap;
+    word-break: break-word;
+    scrollbar-width: thin;
+    scrollbar-color: #3a3268 transparent;
+    min-height: 0;
+  }
+  #term a { color: #b9a7ff; text-decoration: underline; }
+  form {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid #241e45;
+    background: #0e0b20;
+  }
+  #cmd {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 16px;
+    color: var(--text);
+    background: #15102c;
+    border: 1px solid #332b5c;
+    border-radius: 10px;
+    padding: 11px 12px;
+    outline: none;
+  }
+  #cmd:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109, 74, 255, .18); }
+  form button { padding: 10px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; }
+  details {
+    border: 1px solid #2c2550;
+    border-radius: 12px;
+    background: var(--panel);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  details summary { cursor: pointer; color: var(--text); font-weight: 600; }
+  details ul { margin: 10px 0 4px; padding-left: 18px; line-height: 1.6; }
+  code { font-family: var(--mono); font-size: 12px; color: #cfc6ff; background: #221b45; padding: 1px 5px; border-radius: 5px; }
+  @media (max-width: 560px) {
+    .sub { display: none; }
+    header { padding: 10px 12px; }
+    main { padding: 10px 10px 12px; }
+    #term { font-size: 11.5px; padding: 10px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="mark" aria-hidden="true">✉</div>
+    <div>
+      <h1>Proton Mail Bridge</h1>
+      <p class="sub" id="sub">IMAP 1143 · SMTP 1025 · STARTTLS</p>
+    </div>
+  </div>
+  <div class="actions">
+    <span id="status" class="pill warn">Connecting…</span>
+    <button id="restart" title="Restart the Bridge process">Restart</button>
+  </div>
+</header>
+
+<main>
+  <div class="notice" id="notice-official" role="note">
+    <strong>Paid Proton plan required.</strong>
+    Proton Mail Bridge only works with a paid Proton plan
+    (Mail Plus, Proton Unlimited, Duo/Family or Business).
+    A free Proton account cannot sign in and has no IMAP/SMTP access.
+  </div>
+
+  <div class="notice experimental" id="notice-hydroxide" role="note" hidden>
+    <strong>Hydroxide mode (third-party, experimental).</strong>
+    A free Proton account can be used. This mode is not affiliated with Proton;
+    Proton may change or block its API at any time. IMAP support is still work
+    in progress.
+  </div>
+
+  <div class="notice" id="notice-error" role="alert" hidden>
+    <strong>Settings were not applied.</strong>
+    <span id="settings-error"></span>
+  </div>
+
+  <form id="auth-form" autocomplete="off" hidden>
+    <input id="auth-user" type="email" autocomplete="username" autocapitalize="off"
+           autocorrect="off" spellcheck="false" placeholder="you@proton.me">
+    <button type="submit">Sign in</button>
+  </form>
+
+  <div class="quick" id="quick-official">
+    <button data-cmd="login">login</button>
+    <button data-cmd="list">list</button>
+    <button data-cmd="info">info</button>
+    <button data-cmd="help">help</button>
+    <button data-cmd="version">version</button>
+  </div>
+
+  <div class="quick" id="quick-hydroxide" hidden>
+    <button data-cmd="status">status</button>
+    <button data-cmd="password">bridge password</button>
+    <button data-cmd="help">help</button>
+    <button data-cmd="logout confirm"
+            data-confirm="Remove the stored Proton login and bridge password?">sign out</button>
+  </div>
+
+  <section class="terminal-wrap">
+    <pre id="term" aria-live="polite"></pre>
+    <form id="form" autocomplete="off">
+      <input id="cmd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off"
+             spellcheck="false" enterkeyhint="send" placeholder="Type a Bridge command and press Enter…">
+      <button type="submit">Send</button>
+    </form>
+  </section>
+
+  <details id="client-official">
+    <summary>Mail client settings</summary>
+    <ul>
+      <li>IMAP server: this Home Assistant host, port <code>1143</code>, security <code id="imap-security">STARTTLS</code></li>
+      <li>SMTP server: this Home Assistant host, port <code>1025</code>, security <code id="smtp-security">STARTTLS</code></li>
+      <li>Username: your full Proton address</li>
+      <li>Password: run <code>info &lt;account&gt;</code> in the terminal above to show the Bridge password</li>
+      <li>Some prompts only need Enter (for example after the human-verification page); press Enter with an empty input</li>
+      <li>Bridge remembers your accounts and reconnects automatically after a restart</li>
+    </ul>
+  </details>
+
+  <details id="client-hydroxide" hidden>
+    <summary>Mail client settings (Hydroxide)</summary>
+    <ul>
+      <li>IMAP server: this Home Assistant host, port <code>1143</code>, security <code>SSL</code> (implicit TLS, not STARTTLS)</li>
+      <li>SMTP server: this Home Assistant host, port <code>1025</code>, security <code>SSL</code> (implicit TLS, not STARTTLS)</li>
+      <li>Username: your full Proton address</li>
+      <li>Password: the Bridge password shown after sign-in; use the <strong>bridge password</strong> button to show it again</li>
+      <li>Hydroxide uses a self-signed certificate; accept or trust it in your mail client</li>
+      <li>Only one Proton account is supported per add-on in this mode</li>
+      <li>Hydroxide is experimental and not affiliated with Proton; IMAP support is still work in progress</li>
+    </ul>
+  </details>
+</main>
+
+<script>
+  const term = document.getElementById('term');
+  const statusEl = document.getElementById('status');
+  const form = document.getElementById('form');
+  const input = document.getElementById('cmd');
+  const restart = document.getElementById('restart');
+  const sub = document.getElementById('sub');
+  const imapSecurity = document.getElementById('imap-security');
+  const smtpSecurity = document.getElementById('smtp-security');
+  const noticeOfficial = document.getElementById('notice-official');
+  const noticeHydroxide = document.getElementById('notice-hydroxide');
+  const noticeError = document.getElementById('notice-error');
+  const settingsError = document.getElementById('settings-error');
+  const quickOfficial = document.getElementById('quick-official');
+  const quickHydroxide = document.getElementById('quick-hydroxide');
+  const authForm = document.getElementById('auth-form');
+  const authUser = document.getElementById('auth-user');
+  const clientOfficial = document.getElementById('client-official');
+  const clientHydroxide = document.getElementById('client-hydroxide');
+  const quickButtons = document.querySelectorAll('.quick button');
+
+  // Works both behind Home Assistant ingress (/api/hassio_ingress/<token>/)
+  // and when the panel is opened directly.
+  const BASE = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
+
+  let version = -1;
+  let history = [];
+  let historyIndex = 0;
+  let applying = false;
+
+  function linkify(text) {
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    return escaped.replace(/(https?:\/\/[^\s<]+)/g, (url) =>
+      `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+  }
+
+  function apply(data) {
+    if (data.version !== version) {
+      const atBottom = term.scrollTop + term.clientHeight >= term.scrollHeight - 40;
+      term.innerHTML = linkify(data.text || '');
+      if (atBottom) term.scrollTop = term.scrollHeight;
+      version = data.version;
+    }
+
+    const hydroxide = data.implementation === 'hydroxide';
+    const hydro = data.hydroxide || {};
+
+    noticeOfficial.hidden = hydroxide;
+    noticeHydroxide.hidden = !hydroxide;
+    quickOfficial.hidden = hydroxide;
+    quickHydroxide.hidden = !hydroxide;
+    clientOfficial.hidden = hydroxide;
+    clientHydroxide.hidden = !hydroxide;
+    authForm.hidden = !hydroxide || Boolean(hydro.signed_in) || hydro.phase === 'auth';
+
+    if (hydroxide) {
+      imapSecurity.textContent = 'SSL';
+      smtpSecurity.textContent = 'SSL';
+      sub.textContent = 'Hydroxide · IMAP 1143 · SMTP 1025 · SSL';
+    } else if (data.settings) {
+      const imap = String(data.settings.imap_security || 'starttls').toUpperCase();
+      const smtp = String(data.settings.smtp_security || 'starttls').toUpperCase();
+      imapSecurity.textContent = imap;
+      smtpSecurity.textContent = smtp;
+      sub.textContent = 'IMAP 1143 · SMTP 1025 · ' +
+        (imap === smtp ? imap : 'IMAP ' + imap + ' / SMTP ' + smtp);
+    }
+
+    applying = hydroxide ? false : Boolean(data.settings_applying);
+    input.disabled = applying;
+    input.type = hydroxide && hydro.phase === 'auth' ? 'password' : 'text';
+    if (hydroxide) {
+      input.placeholder = hydro.phase === 'auth'
+        ? 'Enter the value requested above and press Enter…'
+        : 'Type a Hydroxide command and press Enter…';
+    } else {
+      input.placeholder = applying
+        ? 'Applying settings from the Configuration tab…'
+        : 'Type a Bridge command and press Enter…';
+    }
+    quickButtons.forEach((button) => { button.disabled = applying; });
+    restart.disabled = applying;
+
+    if (hydroxide) {
+      if (hydro.phase === 'auth') {
+        statusEl.textContent = 'Signing in…';
+        statusEl.className = 'pill warn';
+      } else if (data.running) {
+        statusEl.textContent = 'Hydroxide running';
+        statusEl.className = 'pill ok';
+      } else if (hydro.signed_in) {
+        statusEl.textContent = 'Hydroxide stopped';
+        statusEl.className = 'pill bad';
+      } else {
+        statusEl.textContent = 'Not signed in';
+        statusEl.className = 'pill warn';
+      }
+    } else if (applying) {
+      statusEl.textContent = 'Applying settings…';
+      statusEl.className = 'pill warn';
+    } else if (data.running) {
+      statusEl.textContent = 'Bridge running';
+      statusEl.className = 'pill ok';
+    } else {
+      statusEl.textContent = data.exit_code === null ? 'Starting…' : 'Bridge stopped (' + data.exit_code + ')';
+      statusEl.className = 'pill bad';
+    }
+    if (data.settings_error) {
+      settingsError.textContent = data.settings_error;
+      noticeError.hidden = false;
+      statusEl.textContent = 'Settings error';
+      statusEl.className = 'pill warn';
+    } else {
+      settingsError.textContent = '';
+      noticeError.hidden = true;
+    }
+    statusEl.title = data.settings_error || '';
+  }
+
+  async function poll() {
+    try {
+      const response = await fetch(BASE + 'api/state?v=' + version + '&timeout=20', { cache: 'no-store' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      apply(await response.json());
+    } catch (error) {
+      statusEl.textContent = 'Reconnecting…';
+      statusEl.className = 'pill warn';
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    setTimeout(poll, 150);
+  }
+
+  async function send(text) {
+    if (applying) return;
+    text = text ?? '';
+    const secret = input.type === 'password';
+    input.value = '';
+    if (text.length && !secret) {
+      history.push(text);
+      if (history.length > 100) history.shift();
+    }
+    historyIndex = history.length;
+    try {
+      await fetch(BASE + 'api/input', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: text + '\r' }),
+      });
+    } catch (error) {
+      /* the poll loop reports connection problems */
+    }
+  }
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    send(input.value);
+  });
+
+  authForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const address = authUser.value.trim();
+    if (!address) return;
+    authUser.value = '';
+    send('auth ' + address);
+  });
+
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (historyIndex > 0) {
+        historyIndex -= 1;
+        input.value = history[historyIndex];
+      }
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (historyIndex < history.length - 1) {
+        historyIndex += 1;
+        input.value = history[historyIndex];
+      } else {
+        historyIndex = history.length;
+        input.value = '';
+      }
+    }
+  });
+
+  document.querySelectorAll('.quick button').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (button.dataset.confirm && !window.confirm(button.dataset.confirm)) return;
+      const command = button.dataset.cmd;
+      input.value = command;
+      input.focus();
+      send(command);
+    });
+  });
+
+  restart.addEventListener('click', async () => {
+    if (applying) return;
+    restart.disabled = true;
+    try {
+      await fetch(BASE + 'api/restart', { method: 'POST' });
+    } catch (error) {
+      /* ignore */
+    }
+    setTimeout(() => { restart.disabled = false; }, 1500);
+  });
+
+  poll();
+  input.focus();
+</script>
+</body>
+</html>
