@@ -17,7 +17,7 @@ Home Assistant App wrapper for [ToonSoftwareCollective/toonsim](https://github.c
 
 ## GitHub Container Registry
 
-1. Push this repository to `https://github.com/markbasgitaar/ToonSim-HomeAssistant` on `main`.
+1. The add-on lives in `toonsim/` in `https://github.com/MarkvdDr/HomeAssistantApps`; push to `main` there.
 2. In GitHub Actions, verify that **Build and publish ToonSim images** completes for both `aarch64` and `amd64`.
 3. In the repository's **Packages** section, open `toonsim-homeassistant` → **Package settings** and set visibility to **Public**. Home Assistant needs to pull the image without registry credentials.
 4. The workflow publishes `latest`, the version from `toonsim/config.yaml`, and temporary architecture-specific build tags.
@@ -28,7 +28,7 @@ The workflow uses native GitHub-hosted ARM64 (`ubuntu-24.04-arm`) and AMD64 (`ub
 ## Add the repository to Home Assistant
 
 1. Open **Settings → Apps → Install app → ⋮ → Repositories**.
-2. Add `https://github.com/markbasgitaar/ToonSim-HomeAssistant`.
+2. Add `https://github.com/MarkvdDr/HomeAssistantApps`.
 3. Install ToonSim after the workflow has completed and the GHCR package is public.
 
 ## Configuration

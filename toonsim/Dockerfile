@@ -12,7 +12,7 @@ LABEL \
   io.hass.version="${BUILD_VERSION}" \
   io.hass.type="app" \
   io.hass.arch="${BUILD_ARCH}" \
-  org.opencontainers.image.source="https://github.com/markbasgitaar/ToonSim-HomeAssistant"
+  org.opencontainers.image.source="https://github.com/MarkvdDr/HomeAssistantApps"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     QT_X11_NO_MITSHM=1 \
