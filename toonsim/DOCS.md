@@ -101,7 +101,7 @@ If the container image cannot be downloaded or the container cannot start, resto
 
 ## Troubleshooting
 
-- **Image pull denied:** verify the GHCR package `toonsim-homeassistant` exists, the requested tag is published, and package visibility is Public.
+- **Image pull denied:** verify the GHCR package `ha-toonsim` exists, the requested tag is published, and package visibility is Public.
 - **Firmware copy fails:** confirm IP, SSH username/password, SSH access, and network reachability. Check the app log for the underlying SSH error.
 - **Touchscreen does not load:** check app logs for Qt/QML errors. The Ingress listener is restricted to the Supervisor ingress gateway address.
 - **Toon Mobile does not load:** verify port 8888 is enabled and use the Home Assistant IP address.

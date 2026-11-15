@@ -19,7 +19,7 @@ Home Assistant App wrapper for [ToonSoftwareCollective/toonsim](https://github.c
 
 1. The add-on lives in `toonsim/` in `https://github.com/MarkvdDr/HomeAssistantApps`; push to `main` there.
 2. In GitHub Actions, verify that **Build and publish ToonSim images** completes for both `aarch64` and `amd64`.
-3. In the repository's **Packages** section, open `toonsim-homeassistant` → **Package settings** and set visibility to **Public**. Home Assistant needs to pull the image without registry credentials.
+3. In the repository's **Packages** section, open `ha-toonsim` → **Package settings** and set visibility to **Public**. Home Assistant needs to pull the image without registry credentials.
 4. The workflow publishes `latest`, the version from `toonsim/config.yaml`, and temporary architecture-specific build tags.
 5. For future releases, increment `version` in `toonsim/config.yaml` and push to `main`.
 

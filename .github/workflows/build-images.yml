@@ -33,7 +33,7 @@ jobs:
         shell: bash
         run: |
           owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
-          echo "image=ghcr.io/${owner}/toonsim-homeassistant" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${owner}/ha-toonsim" >> "$GITHUB_OUTPUT"
 
       - name: Read version
         id: version
@@ -77,7 +77,7 @@ jobs:
         shell: bash
         run: |
           owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
-          echo "image=ghcr.io/${owner}/toonsim-homeassistant" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${owner}/ha-toonsim" >> "$GITHUB_OUTPUT"
 
       - name: Read version
         id: version
