@@ -1,120 +1,62 @@
-# A2 Racer II: reverse engineering, port and Home Assistant add-on
+# A2 Racer II Home Assistant add-on
 
-<img src="docs/media/cover.jpg" align="right" width="200" alt="The original Dutch box cover of A2 Racer II">
+Plays A2 Racer II in the browser through Home Assistant ingress. The engine is
+[jjmhalew/A2RacerIIRE](https://github.com/jjmhalew/A2RacerIIRE), a
+reimplementation in C, compiled to WebAssembly with Emscripten. It includes
+the engine's own touch controls, which appear automatically on a touch device.
 
-A study of the 1998 Windows racing game **A2 Racer II** (the Dutch release,
-v1.01), and a reimplementation in C that plays it on Linux and in the browser.
+The add-on contains **no game data**. A2 Racer II is owned by Davilex; use your
+own copy (Dutch version, v1.01).
 
-![The port: at 160 km/h into a police car parked under a bridge, then the racers pass and the police go after them](docs/media/police.gif)
+## Install
 
-The research half is notes on how the original works, worked out from its
-binaries (mainly `spel.dat`, the renamed game executable) and from experiments
-with it running under Wine. Each finding records the code addresses it rests on
-and how sure it is.
+1. In Home Assistant, open **Settings → Add-ons → Add-on store**.
+2. Open the menu → **Repositories** and add
+   `https://github.com/MarkvdDr/HomeAssistantApps`.
+3. Install **A2 Racer II** and start it.
+4. Put your own game files in `/share/A2racer2` (the folder name is
+   case-sensitive). The add-on imports them automatically on the first start.
+5. Open the add-on and press **Spelen**.
 
-The port is a new engine in C (SDL2, OpenGL) that reads the original game data
-unchanged. It runs the whole game: the intro video, the menu, the races, the
-results and the ending. The same sources build for the web with Emscripten.
+The complete `data` folder of the CD or installation is needed; the engine
+checks at least `spel.dat`, `RCS.IMG`, `RCS.IND`, `etappe0.rmp` and
+`Raser.ini`. A `data/` subfolder inside `/share/A2racer2` also works.
 
-<p>
-  <img src="docs/media/amsterdam.jpg" width="32%" alt="Leaving Amsterdam at dusk, office blocks ahead">
-  <img src="docs/media/tunnel.jpg" width="32%" alt="Through a motorway tunnel at 179 km/h">
-  <img src="docs/media/plane.jpg" width="32%" alt="A KLM jumbo crossing the motorway">
-</p>
+You can also choose a folder on the device with **Kies de gamemap…**. The
+files and the saves are stored in the browser (IndexedDB); the add-on itself
+keeps no game data.
 
-All of these are the port, captured on the first stage, Amsterdam - Den Haag.
+## Build
 
-**The game itself is not included.** You need your own copy of A2 Racer II.
-Nothing here changes or redistributes the original files. The research is done
-on the Redump disc image *A2 Racer II (Netherlands) (v1.01)*, which the
-Internet Archive keeps at
-[archive.org/details/Redump.org14618](https://archive.org/details/Redump.org14618).
-
-## Playing
-
-You need CMake, a C compiler, SDL2 and OpenGL. Point the launcher at the game's
-data directory (the installed game, or the `data` folder of the CD or the
-extracted disc image: the one with `spel.dat` and `RCS.IMG`):
+The bundle in `web/` is committed, so the add-on image does not need
+Emscripten. To rebuild it after changing the engine or `engine/web.patch`:
 
 ```sh
-port/play.sh <game data dir>                # 1280x960 window
-port/play.sh <game data dir> --fullscreen
-port/play.sh <game data dir> --fresh        # forget the saved careers
+./build.sh
 ```
 
-It builds the port the first time. Your game directory is never written to:
-the game plays from a copy in `~/.local/share/a2racer2` (or `$A2_PLAY_DIR`),
-which also keeps your careers between runs.
-
-### In the browser
-
-```sh
-port/web/build.sh    # needs Emscripten (emcc)
-port/web/serve.sh    # then open http://localhost:8080/a2racer2.html
-```
-
-The page asks for your A2 Racer II folder once and keeps the files it needs
-in the browser's storage.
-
-### Home Assistant OS add-on
-
-This repository also packages the web build as a Home Assistant OS add-on. It
-serves the prebuilt WebAssembly port through Home Assistant ingress, so the
-same add-on runs on `aarch64`, `amd64`, `armv7`, `armhf` and `i386`.
-
-- **No game data is included.** You need your own copy of A2 Racer II.
-- **Game data via Samba NAS:** put your files in `/share/a2racer2`; the add-on
-  reads them read-only.
-- **No noVNC or software OpenGL.** The add-on serves the WASM build directly
-  through Home Assistant ingress.
-
-See [`DOCS.md`](DOCS.md) for installation, use and rebuilding the web bundle.
+This fetches the pinned upstream commit, applies `engine/web.patch` and writes
+`web/a2racer2.js` and `web/a2racer2.wasm`. Emscripten is only needed for this
+build; see [`engine/README.md`](engine/README.md).
 
 ## Layout
 
-| Path | Contents |
+| Path | Purpose |
 |---|---|
-| `research/discoveries.md` | What has been established, with evidence |
-| `research/hypotheses.md` | Ideas that are not settled yet |
-| `research/open-questions.md` | Open and resolved questions |
-| `reverse-engineering/` | Reference docs: executables, file formats, game and menu architecture, running the original under Wine |
-| `reverse-engineering/tools/` | Disassembly helpers, Unicorn emulation harnesses and gdb scripts used to check findings |
-| `reverse-engineering/analysis/` | Function lists, source-file map and annotations taken from the binaries |
-| `port/` | The C port; [`port/README.md`](port/README.md) is its detailed manual |
-| `port/web/` | The WebAssembly build |
-| `config.yaml`, `Dockerfile`, `web/` | Home Assistant OS add-on around the prebuilt web build |
-| `port/a2tools/` | Python tools for the game's archives, images, sprites and car data |
+| `config.yaml`, `Dockerfile` | Home Assistant add-on definition and image |
+| `nginx.conf` | Static server on port 8099 and the `/game/` listing |
+| `web/` | Page, loader and the prebuilt `a2racer2.js`/`.wasm` |
+| `engine/` | Pinned upstream patch, GPLv3 licence and WASM build script |
+| `build.sh` | Rebuilds the WASM bundle |
+| `NOTICE` | Upstream, licence and attribution |
 
-## How the research works
+## Licence
 
-Each finding carries a label: CONFIRMED, STRONGLY SUPPORTED, LIKELY or
-SPECULATIVE. The notes never present an inference as fact. Evidence from
-the binaries and from runtime experiments comes before outside documentation.
-Where the port's behaviour comes from the original, its source comments name
-the address it was taken from, for example `0x4190d0` for the sky. Where the
-port deliberately differs, `port/README.md` says so. The working rules are in
-[`AGENTS.md`](AGENTS.md).
+The add-on packaging (nginx, Dockerfile, page and loader) is released under
+the [BOLA License](LICENSE). The engine in `engine/` and the prebuilt
+`web/a2racer2.js`/`web/a2racer2.wasm` are jjmhalew/A2RacerIIRE, licensed under
+the GNU GPL v3 or later; see [`engine/LICENSE`](engine/LICENSE) and
+[`NOTICE`](NOTICE). Neither licence covers the game. A2 Racer II, its data and
+its box art belong to their rights holders.
 
-The original runs under Wine without the CD (it honours a `NOCD` environment
-variable), which makes side-by-side comparisons possible; see
-[`reverse-engineering/runtime-wine.md`](reverse-engineering/runtime-wine.md).
-
-Some tools in `reverse-engineering/tools/` need Python 3 with `capstone`,
-`pefile` and `unicorn`, and some run inside gdb.
-
-## Status
-
-The full game is playable from start to finish. The remaining differences
-from the original are listed under "Known gaps" in `port/README.md`, and the
-unanswered questions are in `research/open-questions.md`.
-
-## License
-
-This software is released under the [BOLA License](LICENSE). It covers this
-project's own code and notes, not the game.
-
-## Legal
-
-A2 Racer II, its data and its box art (Davilex, 1998; the cover image is from
-IGDB) are the property of their rights holders. This
-project contains no game data and is meant for people who own the game.
+Full Dutch documentation: [`DOCS.md`](DOCS.md).

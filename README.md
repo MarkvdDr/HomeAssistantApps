@@ -8,7 +8,7 @@ Apps and add-ons for Home Assistant.
 | --- | --- | --- |
 | [`protonmail_bridge/`](protonmail_bridge/) | Home Assistant add-on | Runs Proton Mail Bridge or the third-party Hydroxide bridge on Home Assistant OS and exposes IMAP/SMTP on ports `1143` and `1025`. |
 | [`toonsim/`](toonsim/) | Home Assistant add-on | Runs ToonSim (a simulated Toon thermostat) with a browser touchscreen, Toon Mobile and firmware copied from a rooted Toon. |
-| [`a2racer2/`](a2racer2/) | Home Assistant add-on | Serves the browser port of A2 Racer II through Home Assistant ingress; game data stays on `/share/a2racer2`. |
+| [`a2racer2/`](a2racer2/) | Home Assistant add-on | Serves the jjmhalew/A2RacerIIRE browser port of A2 Racer II through Home Assistant ingress, with automatic touch controls; game data is imported from `/share/A2racer2`. |
 
 ## Proton Mail Bridge add-on
 
@@ -38,8 +38,8 @@ Full documentation: [`toonsim/README.md`](toonsim/README.md) and
 2. Open the three-dot menu → **Repositories** and add
    `https://github.com/MarkvdDr/HomeAssistantApps`.
 3. Install **A2 Racer II** and start it.
-4. Put your own game files in `/share/a2racer2` and open the add-on. A2 Racer
-   II itself is not included.
+4. Put your own game files in `/share/A2racer2` and open the add-on; the first
+   start imports them into the browser. A2 Racer II itself is not included.
 
 Full documentation: [`a2racer2/README.md`](a2racer2/README.md) and
 [`a2racer2/DOCS.md`](a2racer2/DOCS.md).
@@ -49,6 +49,8 @@ Full documentation: [`a2racer2/README.md`](a2racer2/README.md) and
 The add-on packaging is released under the MIT License; see
 [`LICENSE`](LICENSE). The bundled Proton Mail Bridge is GPLv3 software by
 Proton AG. See [`protonmail_bridge/NOTICE.md`](protonmail_bridge/NOTICE.md) for
-the upstream source and license details. The A2 Racer II port and research in
-[`a2racer2/`](a2racer2/) are released under the BOLA License; see
-[`a2racer2/LICENSE`](a2racer2/LICENSE). A2 Racer II itself is not included.
+the upstream source and license details. The A2 Racer II add-on packaging in
+[`a2racer2/`](a2racer2/) is released under the BOLA License; see
+[`a2racer2/LICENSE`](a2racer2/LICENSE). The bundled engine
+(jjmhalew/A2RacerIIRE) is GPLv3 software; see
+[`a2racer2/NOTICE`](a2racer2/NOTICE). A2 Racer II itself is not included.

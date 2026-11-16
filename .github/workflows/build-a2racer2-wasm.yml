@@ -1,0 +1,61 @@
+name: Build A2 Racer II WASM bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "a2racer2/engine/**"
+      - "a2racer2/web/a2racer2.html"
+      - "a2racer2/web/loader.js"
+      - ".github/workflows/build-a2racer2-wasm.yml"
+  pull_request:
+    paths:
+      - "a2racer2/engine/**"
+      - "a2racer2/web/a2racer2.html"
+      - "a2racer2/web/loader.js"
+      - ".github/workflows/build-a2racer2-wasm.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.13
+          actions-cache-folder: emsdk-cache
+
+      - name: Cache the Emscripten ports
+        uses: actions/cache@v4
+        with:
+          path: .emscripten-cache
+          key: emscripten-${{ runner.os }}-6.0.13-sdl2
+
+      - name: Build the bundle
+        env:
+          EM_CACHE: ${{ github.workspace }}/.emscripten-cache
+        run: ./a2racer2/engine/build-web.sh
+
+      - name: Check the committed bundle
+        shell: bash
+        run: |
+          if git diff --quiet -- a2racer2/web/a2racer2.js a2racer2/web/a2racer2.wasm; then
+            echo "The committed bundle matches the engine sources."
+          else
+            echo "::warning::The build differs from the committed bundle; rebuild and commit web/a2racer2.js and web/a2racer2.wasm."
+          fi
+
+      - name: Upload the bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: a2racer2-wasm
+          path: |
+            a2racer2/web/a2racer2.js
+            a2racer2/web/a2racer2.wasm
+          if-no-files-found: error

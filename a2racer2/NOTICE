@@ -1,0 +1,22 @@
+A2 Racer II Home Assistant add-on
+=================================
+
+The WebAssembly game engine in this add-on is A2RacerIIRE by jjmhalew and
+contributors, licensed under the GNU General Public License v3 or later.
+
+  Upstream:      https://github.com/jjmhalew/A2RacerIIRE
+  Pinned commit: cbd3d78b11a70b901622fbd94d524a4829d7c062
+  Local change:  engine/web.patch (Emscripten platform layer)
+  License:       engine/LICENSE (GPL-3.0)
+
+The prebuilt files web/a2racer2.js and web/a2racer2.wasm are built from that
+source. The corresponding source is the upstream repository at the pinned
+commit plus engine/web.patch; engine/build-web.sh reproduces the bundle.
+
+The Home Assistant packaging (config.yaml, Dockerfile, nginx.conf,
+web/a2racer2.html and web/loader.js) is released under the BOLA License in
+LICENSE. SDL2, which Emscripten links into the bundle, is zlib-licensed.
+
+A2 Racer II, its game data and its box art are the property of their rights
+holders. This add-on contains no game data and is meant for people who own
+the game.

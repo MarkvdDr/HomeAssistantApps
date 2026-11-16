@@ -1,8 +1,8 @@
 name: A2 Racer II
-version: "1.1.0"
+version: "2.0.0"
 slug: a2racer2
-description: Speel de volledige browserport van A2 Racer II via Home Assistant-ingress.
-url: https://github.com/berobloom/a2racer2-re
+description: Speel A2 Racer II in de browser via Home Assistant-ingress, met automatische aanraakbediening.
+url: https://github.com/MarkvdDr/HomeAssistantApps/tree/main/a2racer2
 arch:
   - aarch64
   - amd64
@@ -14,7 +14,7 @@ arch:
 init: true
 startup: application
 boot: auto
-# The game files live on the Home Assistant host in /share/a2racer2.
+# The game files live on the Home Assistant host in /share/A2racer2.
 # Read-only: the add-on only serves them, saves stay in the browser.
 map:
   - share:ro

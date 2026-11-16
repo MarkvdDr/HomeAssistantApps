@@ -1,0 +1,193 @@
+diff --git a/src/plat_sdl.c b/src/plat_sdl.c
+index e4d60d2..57958ce 100644
+--- a/src/plat_sdl.c
++++ b/src/plat_sdl.c
+@@ -16,6 +16,26 @@
+ #include <dirent.h>
+ #include <unistd.h>
+ #endif
++#ifdef __EMSCRIPTEN__
++#include <emscripten.h>
++
++/* The browser answers before the first finger arrives whether this is a touch-first device (a phone or a tablet), so
++ * the race can show its on-screen controls from the first frame instead of waiting for a tap. */
++EM_JS(int, web_touch_device, (), {
++    try {
++        if (navigator.maxTouchPoints > 0) return 1;
++        if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return 1;
++    } catch (e) {}
++    return 0;
++});
++
++/* A message box does not exist in the page: the shell listens for this event and shows the text above the game. */
++EM_JS(void, web_message, (const char *text), {
++    var s = UTF8ToString(text);
++    console.error('A2RacerIIRE: ' + s);
++    try { window.dispatchEvent(new CustomEvent('a2-message', { detail: s })); } catch (e) {}
++});
++#endif
+ 
+ static SDL_Window *g_win;
+ static SDL_GLContext g_gl;
+@@ -138,8 +158,14 @@ void plat_message(const char *text, int warn)
+ void plat_message(const char *text, int warn)
+ {
+     fprintf(stderr, "%s\n", text);
++#ifdef __EMSCRIPTEN__
++    (void)warn;
++    if (getenv("A2_HIDDEN")) return;
++    web_message(text);                                       /* the page shows it; SDL has no message box here */
++#else
+     if (getenv("A2_HIDDEN")) return;                          /* tests: no window */
+     SDL_ShowSimpleMessageBox(warn ? SDL_MESSAGEBOX_WARNING : SDL_MESSAGEBOX_INFORMATION, "A2RacerIIRE", text, g_win);
++#endif
+ }
+ #endif
+ 
+@@ -177,7 +203,7 @@ int plat_init(const PlatConfig *cfg)
+     test_pad_init();
+     test_touch_init();
+     g_t0 = SDL_GetPerformanceCounter();
+-#if defined __ANDROID__ || defined __SWITCH__
++#if defined __ANDROID__ || defined __SWITCH__ || defined __EMSCRIPTEN__
+     g_gles = 1;
+ #endif
+     if (g_gles) {
+@@ -221,19 +247,22 @@ int plat_init(const PlatConfig *cfg)
+     g_vsync = cfg->vsync ? 1 : 0;
+     SDL_GL_SetSwapInterval(g_vsync);
+     g_test_glreset = getenv("A2_TEST_GLRESET") ? atof(getenv("A2_TEST_GLRESET")) : 0;
+-#if defined __ANDROID__ || defined __SWITCH__
++#if defined __ANDROID__ || defined __SWITCH__ || defined __EMSCRIPTEN__
+     /* no soft keyboard over the game: on Android only while a name is typed (plat_text_mode); the Switch's is an
+      * applet that stops the game, so there the name is entered with the pad (the menu's pad name entry) */
+     SDL_StopTextInput();
+ #else
+     SDL_StartTextInput();
++#endif
++#ifdef __EMSCRIPTEN__
++    if (web_touch_device()) g_input_kind = PLAT_INPUT_TOUCH;   /* the race starts with its touch controls shown */
+ #endif
+     return 1;
+ }
+ 
+ void plat_text_mode(int on)
+ {
+-#ifdef __ANDROID__
++#if defined __ANDROID__ || defined __EMSCRIPTEN__
+     static int cur;
+     if (on == cur) return;
+     cur = on;
+@@ -276,7 +305,22 @@ void plat_shutdown(void)
+     g_win = NULL;
+ }
+ 
+-void plat_swap(void) { SDL_GL_SwapWindow(g_win); }
++void plat_swap(void)
++{
++    SDL_GL_SwapWindow(g_win);
++#ifdef __EMSCRIPTEN__
++    /* The browser's swap does not wait for the screen. Yield to the event loop until the next 60 Hz deadline, so the
++     * page keeps handling input and the game settles near 60 frames per second. The game measures its own frame time,
++     * so its speed does not depend on this. */
++    static double next;
++    double now = plat_time();
++    if (next <= 0) next = now;
++    next += 1.0 / 60.0;
++    if (next < now + 0.001) next = now + 0.001;          /* a slow frame: do not build up a backlog */
++    int ms = (int)((next - now) * 1000.0);
++    emscripten_sleep(ms > 0 ? ms : 0);
++#endif
++}
+ void plat_size(int *w, int *h) { SDL_GL_GetDrawableSize(g_win, w, h); }
+ int plat_is_gles(void) { return g_gles; }
+ int plat_gl_can_lose(void) { return g_gles || g_test_glreset > 0; }
+@@ -955,7 +999,14 @@ void plat_audio_unlock(void) { if (g_audio) SDL_UnlockAudioDevice(g_audio); }
+ 
+ /* ---- time and files -------------------------------------------------------------------------------------------- */
+ double plat_time(void) { return (double)(SDL_GetPerformanceCounter() - g_t0) / (double)SDL_GetPerformanceFrequency(); }
+-void plat_sleep_ms(int ms) { SDL_Delay((Uint32)(ms > 0 ? ms : 0)); }
++void plat_sleep_ms(int ms)
++{
++#ifdef __EMSCRIPTEN__
++    emscripten_sleep(ms > 0 ? ms : 0);       /* yields to the browser; SDL_Delay would freeze the page */
++#else
++    SDL_Delay((Uint32)(ms > 0 ? ms : 0));
++#endif
++}
+ 
+ static int exists_exact(const char *path) { struct stat st; return stat(path, &st) == 0; }
+ 
+@@ -1027,6 +1078,11 @@ const char *plat_user_dir(void)
+     static char *dir;
+     if (g_user_override[0]) return g_user_override;
+     if (!dir) {
++#ifdef __EMSCRIPTEN__
++        /* IDBFS, mounted by the page: settings and saves survive a reload, like the game files at /data */
++        dir = SDL_strdup("/user/");
++        if (!dir) dir = SDL_strdup("./");
++#endif
+ #ifdef __SWITCH__
+         /* sdmc:/switch/a2racerre on the SD card, next to a2racerre.nro: the game files in data/ (or an ISO image of the
+          * CD to unpack there), the settings, the saves and mods/ */
+@@ -1040,8 +1096,10 @@ const char *plat_user_dir(void)
+         if (ext) { size_t n = strlen(ext) + 2; dir = SDL_malloc(n); snprintf(dir, n, "%s/", ext); }
+         if (!dir)
+ #endif
++#ifndef __EMSCRIPTEN__
+         dir = SDL_GetPrefPath("", "A2RacerRE");   /* the folder keeps the project's first name: existing saves stay */
+         if (!dir) dir = SDL_strdup("./");
++#endif
+     }
+     return dir;
+ }
+@@ -1057,7 +1115,9 @@ const char *plat_base_dir(void)
+ {
+     static char *base;
+     if (!base) {
+-#ifdef __SWITCH__
++#ifdef __EMSCRIPTEN__
++        base = SDL_strdup("/app/");                /* not the data folder: that one is passed as /data */
++#elif defined __SWITCH__
+         base = SDL_strdup(plat_user_dir());
+ #else
+         base = SDL_GetBasePath();
+@@ -1067,6 +1127,16 @@ const char *plat_base_dir(void)
+     return base;
+ }
+ 
++#ifdef __EMSCRIPTEN__
++/* The page owns the game files. If the engine asks here, the folder is incomplete: show the question as a message and
++ * stop the start, instead of opening a dialog whose desktop choices the browser cannot offer. */
++int plat_ask(const char *text, const char *b1, const char *b2, const char *b3)
++{
++    (void)b1; (void)b2; (void)b3;
++    web_message(text);
++    return -1;
++}
++#else
+ int plat_ask(const char *text, const char *b1, const char *b2, const char *b3)
+ {
+     SDL_MessageBoxButtonData btn[3];
+@@ -1080,6 +1150,7 @@ int plat_ask(const char *text, const char *b1, const char *b2, const char *b3)
+     if (SDL_ShowMessageBox(&box, &hit) != 0) return -1;
+     return hit;
+ }
++#endif
+ 
+ #ifdef _WIN32
+ #include <windows.h>
+@@ -1153,6 +1224,13 @@ int plat_pick_data(char *out, size_t cap, int *fd, const char *dest)
+     (void)out; (void)cap; (void)fd; (void)dest;
+     return PICK_NONE;
+ }
++#elif defined __EMSCRIPTEN__
++/* the page loads the files (a chosen folder, or /share/A2racer2 through /game/); a browser has no file dialog here */
++int plat_pick_data(char *out, size_t cap, int *fd, const char *dest)
++{
++    (void)out; (void)cap; (void)fd; (void)dest;
++    return PICK_NONE;
++}
+ #else
+ /* Linux: zenity (GNOME, SteamOS desktop) or kdialog (KDE) when there; else the path typed in a terminal is not
+  * possible from a game window, so the message tells how to pass it on the command line */
